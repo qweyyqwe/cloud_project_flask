@@ -36,6 +36,7 @@ comment_json = {
     'user_id': fields.Integer,
     'article_id': fields.Integer,
     'content': fields.String,
+    'parent_id': fields.Integer,
 
 }
 
@@ -453,14 +454,93 @@ class AddNewsComment(Resource):
         user_id = g.user_id
         parser = reqparse.RequestParser()
         parser.add_argument('article_id')
-        parser.add_argument('content')
+        parser.add_argument('content', required=True)
+        parser.add_argument('parent_id')
         args = parser.parse_args()
         article_id = args.get('article_id')
         content = args.get('content')
-        contents = Comment(user_id=user_id, article_id=article_id, content=content)
-        db.session.add(contents)
-        db.session.commit()
-        return {'message': 'okokok', 'code': 200, 'data': marshal(contents, comment_json)}
+        parent_id = args.get('parent_id')
+        try:
+            if parent_id:
+                parent_comment = Comment.query.get(parent_id)
+                if not parent_comment:
+                    return {'message': 'Invalid parameter', 'code': 407}
+            contents = Comment(user_id=user_id, article_id=article_id, content=content, parent_id=parent_id)
+            db.session.add(contents)
+            db.session.commit()
+        except:
+            error = traceback.format_exc()
+            logging.error('AddNewsComment error:{}'.format(error))
+            return {'message': 'fail', 'code': 507}
+        return {'message': 'ok', 'code': 200, 'data': marshal(contents, comment_json)}
+
+
+class GetNewsComment(Resource):
+    """
+    获取资讯评论
+    """
+
+    def get(self):
+        # news_id = request.args.get('news_id')
+        # page = int(request.args.get('page'))
+        # page_size = int(request.args.get('page_size'))
+        # print(type(page))
+
+        parser = reqparse.RequestParser()
+        parser.add_argument('news_id')
+        parser.add_argument('page', default=1)
+        parser.add_argument('page_size', default=20)
+        args = parser.parse_args()
+        news_id = args.get('news_id')
+        page = int(args.get('page', 1))
+        page_size = int(args.get('page_size', 20))
+
+        try:
+            # 获取资讯的评论（不包括评论的评论）
+            comment_list = Comment.query.filter_by(article_id=news_id, parent_id=None).all()
+            comment_list.reverse()
+            total = len(comment_list)
+            # 分页
+            # 信息的起始数据位置
+            start = (page - 1) * page_size
+            # 信息的结束数据位置
+            end = page * page_size if total > page * page_size else total
+            comment_list = comment_list[start: end]
+        except:
+            error = traceback.format_exc()
+            logging.error('GetNewsComment error:{}'.format(error))
+            return {'message': 'fail', 'code': 507, 'error': 'Server is error!'}
+        return {'message': 'ok', 'code': 200, 'data': marshal(comment_list, comment_json), 'count': total}
+
+
+class GetCommentChild(Resource):
+    """
+    获取评论的评论
+    """
+
+    def get(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('comment_id', required=True)
+        parser.add_argument('page', default=1)
+        parser.add_argument('page_size', default=20)
+        args = parser.parse_args()
+        comment_id = args.get('comment_id')
+        page = int(args.get('page', 1))
+        page_size = int(args.get('page_size', 20))
+        # 获取评论的评论
+        # parent_id  是评论的评论的id
+        comment_list = Comment.query.filter_by(parent_id=comment_id).all()
+        comment_list.reverse()
+
+        # 分页
+        total = len(comment_list)
+        # 信息的起始数据位置
+        start = (page - 1) * page_size
+        # 信息的结束数据位置
+        end = page * page_size if total > page * page_size else total
+        comment_list = comment_list[start: end]
+
+        return {'message': 'ok', 'data': marshal(comment_list, comment_json)}
 
 
 class DeleteNewsComment(Resource):
@@ -503,4 +583,6 @@ api.add_resourse(GetAllCollection, '/getallcollection', endpoint='getallcollecti
 api.add_resourse(DelCollection, '/delcollection', endpoint='getallcoldelcollectionlection')
 api.add_resourse(UpdateNewsLikeCount, '/updatenewslikecount', endpoint='updatenewslikecount')
 api.add_resourse(AddNewsComment, '/addnewscomment', endpoint='addnewscomment')
+api.add_resourse(GetNewsComment, '/get_news_comment', endpoint='get_news_comment')
+api.add_resourse(GetCommentChild, '/get_comment_child', endpoint='get_comment_child')
 api.add_resourse(DeleteNewsComment, '/deletenewscomment', endpoint='deletenewscomment')

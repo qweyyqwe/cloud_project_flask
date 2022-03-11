@@ -5,11 +5,11 @@
 # @File    : pyjwt.py
 # @Software: PyCharm
 
-import jwt
 import traceback
-
-from flask import current_app, g
 from datetime import datetime, timedelta
+
+import jwt
+from flask import current_app, g
 
 
 def generate_jwt(payload, expiry, secret=None):
@@ -94,8 +94,7 @@ def _generate_token(account, user_id, refresh=True):
     expiry = datetime.utcnow() + timedelta(hours=2)
     # 生成Token
     token = 'Bearer ' + generate_jwt({'account': account, 'user_id': user_id}, expiry, secret)
-    print('>>>>>>>>>token',token)
-    print('>>',g.user_id)
+
     if refresh:
         expiry = datetime.utcnow() + timedelta(days=15)
         # is_refresh作为更新token的信号/
