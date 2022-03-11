@@ -4,10 +4,12 @@
 # @Email   : mat_wu@163.com
 # @File    : pyjwt.py
 # @Software: PyCharm
-import jwt
-import traceback
 
-from flask import current_app
+import traceback
+from datetime import datetime, timedelta
+
+import jwt
+from flask import current_app, g
 
 
 def generate_jwt(payload, expiry, secret=None):
@@ -31,15 +33,8 @@ def generate_jwt(payload, expiry, secret=None):
     # 更新2.3.0返回str
     return token
 
+
 '''
-from datetime import datetime, timedelta
-
-import jwt
-import traceback
-
-from flask import current_app
-
-
 def generate_jwt(payload, expiry, secret=None, refresh=None):
     """
     生成jwt
@@ -85,3 +80,42 @@ def verify_jwt(token, secret=None):
         print('error', error)
         payload = None
     return payload
+
+
+def _generate_token(account, user_id, refresh=True):
+    """
+    生成token
+    :param user_id:
+    :return:
+    """
+    # 获取盐
+    secret = current_app.config.get('JWT_SECRET')
+    # 定义过期时间        2小时
+    expiry = datetime.utcnow() + timedelta(hours=2)
+    # 生成Token
+    token = 'Bearer ' + generate_jwt({'account': account, 'user_id': user_id}, expiry, secret)
+
+    if refresh:
+        expiry = datetime.utcnow() + timedelta(days=15)
+        # is_refresh作为更新token的信号/
+        refresh_token = 'Bearer ' + generate_jwt({'account': account, 'user_id': user_id, 'is_refresh': True}, expiry,
+                                                 secret)
+    else:
+        refresh_token = None
+    return token, refresh_token
+
+
+def refresh_token():
+    """
+    刷新token
+    :return:
+    """
+    if g.account is not None and g.is_refresh is True:
+        token, refresh_token = _generate_token(g.account, g.user_id, refresh=False)
+        return {'message': 'ok', 'data': {'token': token}}
+    else:
+        return {'message': 'Invalid refresh token', 'code': 403}
+
+
+def check_rds_token():
+    pass

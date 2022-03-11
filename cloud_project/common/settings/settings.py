@@ -14,7 +14,7 @@ class Fik(object):
     # 异常开启或警报   关闭警告
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     # 显示执行sql过程
-    SQLALCHEMY_ECHO = True
+    # SQLALCHEMY_ECHO = True
     JWT_SECRET = 'LSJFLSJFLWE23O9UDFNSDF'
 
 
