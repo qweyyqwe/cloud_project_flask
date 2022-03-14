@@ -566,6 +566,111 @@ class DeleteNewsComment(Resource):
         return {'message': 'delete ok', 'code': 204}
 
 
+class PublishNews(Resource):
+    """
+    用户发布资讯
+    """
+
+    @login_required
+    def post(self):
+        user_id = g.user_id
+        parser = reqparse.RequestParser()
+        parser.add_argument('content')
+        parser.add_argument('title')
+        parser.add_argument('channel_id')
+        args = parser.parse_args()
+        content = args.get('content')
+        title = args.get('title')
+        channel_id = args.get('channel_id')
+
+        try:
+            if not all([content, title, channel_id]):
+                return {'code': 407, 'message': 'params is invalid!'}
+            channel = Channel.query.get(channel_id)
+            # 验证channel_id是否合法
+            if not channel:
+                return {'code': 407, 'message': 'channel_id is error!'}
+
+            # 添加资讯
+            news = News(user_id=user_id, content=content, title=title, channel_id=channel_id)
+            db.session.add(news)
+            db.session.commit()
+        except:
+            error = traceback.format_exc()
+            logging.error('PublishNews error:{}'.format(error))
+            return {'message': 'fail', 'code': 507, 'error': 'Server is error!'}
+        return {'message': 'ok', 'code': 200, 'data': marshal(news, new_json)}
+
+
+class PutNews(Resource):
+    """
+    修改资讯
+    """
+
+    @login_required
+    def put(self):
+        user_id = g.user_id
+        parser = reqparse.RequestParser()
+        parser.add_argument('nid')
+        parser.add_argument('title')
+        parser.add_argument('content')
+        args = parser.parse_args()
+        nid = args.get('nid')
+        title = args.get('title')
+        content = args.get('content')
+        try:
+            data = {}
+            if title:
+                data.update({'title': title})
+            if content:
+                data.update({'content': content})
+            # 获取用户发表的资讯id
+            news = News.query.filter_by(nid=nid)
+
+            # 判断是否有这个资讯
+            if not news.first():
+                return {'message': 'Not find news', 'code': 407}
+            # 判断用户是否是自己  否则没权限
+            if news.first().user_id != user_id:
+                return {'message': 'Not Permission', 'code': 407}
+            news.update(data)
+            db.session.commit()
+        except:
+            error = traceback.format_exc()
+            logging.error('PublishNews error:{}'.format(error))
+            return {'message': 'fail', 'code': 507, 'error': 'Server is error!'}
+        return {'message': 'ok', 'code': 200}
+
+    @login_required
+    def post(self):
+        user_id = g.user_id
+        parser = reqparse.RequestParser()
+        parser.add_argument('nid')
+        parser.add_argument('title')
+        parser.add_argument('content')
+        args = parser.parse_args()
+        nid = args.get('nid')
+        title = args.get('title')
+        content = args.get('content')
+
+        # 获取对象
+        news = News.query.get(nid)
+
+        # 判断是否有这篇资讯
+        if not news:
+            return {'message': 'Not find news', 'code': 407}
+        if news.user_id != user_id:
+            return {'message': 'Not permission!', 'code': 407}
+
+        # 资讯标题以及内容不能为空
+        if title:
+            news.title = title
+        if content:
+            news.content = content
+        db.session.commit()
+        return {'message': 'ok', 'code': 200, 'data': marshal(news, new_json)}
+
+
 api = Api(channel_bp)
 api.add_resourse(Add_News_Channel, '/addnewschannel', endpoint='add_channel')
 api.add_resourse(ChannelAll, '/allchannel', endpoint='all_channel')
@@ -586,3 +691,5 @@ api.add_resourse(AddNewsComment, '/addnewscomment', endpoint='addnewscomment')
 api.add_resourse(GetNewsComment, '/get_news_comment', endpoint='get_news_comment')
 api.add_resourse(GetCommentChild, '/get_comment_child', endpoint='get_comment_child')
 api.add_resourse(DeleteNewsComment, '/deletenewscomment', endpoint='deletenewscomment')
+api.add_resourse(PublishNews, '/publishnews', endpoint='publishnews')
+api.add_resourse(PutNews, '/putnews', endpoint='putnews')

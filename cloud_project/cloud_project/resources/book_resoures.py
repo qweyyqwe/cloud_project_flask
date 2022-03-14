@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Time    : 2021/11/22 
-# @Author  : 杨玉磊
 # @Email   : mat_wu@163.com
 # @File    : book_resoures.py
 # @Software: PyCharm
@@ -29,43 +26,7 @@ class BookResource(Resource):
         return 'ok'
 
 
-class SMSVerificationCodeResource(Resource):
-    """
-    验证码发送视图
-    """
 
-    def post(self):
-        # 获取用户手机号码
-        req = reqparse.RequestParser()
-        req.add_argument('mobile')
-        args = req.parse_args()
-        mobile = args['mobile']
-        print('mobile>>>', mobile)
-        # 给用户发送手机号码: ali-sdk
-        client = AcsClient(
-            "LTAI4G7FrRj37co9gGDFRfbX",
-            "9NxJUZdNj7B21dJ627WuKYqc4MEuiV",
-            "cn-hangzhou"
-        )
-        request = CommonRequest()
-        request.set_accept_format('json')
-        request.set_domain('dysmsapi.aliyuncs.com')
-        request.set_method('POST')
-        request.set_protocol_type('https')
-        request.set_version('2017-05-25')
-        request.set_action_name('SendSms')
-
-        request.add_query_param('RegionId', "cn-hangzhou")
-        request.add_query_param('PhoneNumbers', "17679962330")
-        request.add_query_param('SignName', "云资讯")
-        request.add_query_param('TemplateCode', "SMS_211497619")
-        response = client.do_action(request)
-        # print('response>>>>>', response)
-        # print(str(response, encoding='utf-8'))
-        # 连接Redis, 存储验证码
-        rds = redis.Redis()
-        rds.setex(mobile, 200, '123456')
-        return {'message': 'ok', 'data': {'mobile': mobile}}
 
 
 user_fields = {
@@ -252,7 +213,6 @@ class GetUsers(Resource):
 mredis = redis.Redis(host='192.168.86.207', port=6379, password=None)
 api.add_resourse(AuthorizationResource, '/register_user', endpoint='register_user')
 api.add_resourse(Login, '/login', endpoint='login')
-api.add_resourse(SMSVerificationCodeResource, '/sms/codes/', endpoint='codes')
 api.add_resourse(BookResource, '/index', endpoint='book')
 api.add_resourse(GetUserInfo, '/getuserinfo', endpoint='getuserinfo')
 api.add_resourse(PutUserInfo, '/putuserinfo', endpoint='putuserinfo')

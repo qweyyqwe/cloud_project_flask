@@ -1,9 +1,6 @@
-# # -*- coding: utf-8 -*-
-# # @Time    : 2021/11/22
-# # @Author  : 杨玉磊
-# # @Email   : mat_wu@163.com
-# # @File    : qlogin_decorator.py
-# # @Software: PyCharm
+# @Email   : mat_wu@163.com
+# @File    : qlogin_decorator.py
+# @Software: PyCharm
 
 
 from flask import g
