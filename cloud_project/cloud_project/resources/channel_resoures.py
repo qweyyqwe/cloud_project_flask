@@ -5,6 +5,7 @@
 
 import logging
 import traceback
+from datetime import datetime
 
 import demjson
 from flask import Blueprint, g, request
@@ -29,6 +30,7 @@ new_json = {
     'title': fields.String,
     'content': fields.String,
     'good_count': fields.Integer,
+    'ctime': fields.DateTime,
 }
 
 comment_json = {
@@ -591,8 +593,8 @@ class PublishNews(Resource):
             if not channel:
                 return {'code': 407, 'message': 'channel_id is error!'}
 
-            # 添加资讯
-            news = News(user_id=user_id, content=content, title=title, channel_id=channel_id)
+            # 添加资讯  status=1是状态  是待审核
+            news = News(user_id=user_id, content=content, title=title, channel_id=channel_id, status=1)
             db.session.add(news)
             db.session.commit()
         except:
@@ -671,6 +673,64 @@ class PutNews(Resource):
         return {'message': 'ok', 'code': 200, 'data': marshal(news, new_json)}
 
 
+class GetListNews(Resource):
+    """
+    获取资讯列表
+    """
+
+    @login_required
+    def get(self):
+        user_id = g.user_id
+        parser = reqparse.RequestParser()
+        parser.add_argument('page', default=1, type=int)
+        parser.add_argument('page_size', default=20, type=int)
+        args = parser.parse_args()
+        page = int(args.get('page'))
+        page_size = int(args.get('page_size'))
+        page_size = page_size if 20 > page_size > 10 else 20
+        news_list = News.query.all()
+        news_list.reverse()
+
+        # 分页
+        total = len(news_list)
+        # 信息的起始数据位置
+        start = (page - 1) * page_size
+        # 信息的结束数据位置
+        end = page * page_size if total > page * page_size else total
+        comment_list = news_list[start: end]
+
+        return {'message': 'ok', 'data': marshal(comment_list, new_json)}
+
+
+class DelUserNews(Resource):
+    """
+    删除指定资讯
+    """
+
+    @login_required
+    def put(self):
+        # 创建请求参数解析对象
+        req = reqparse.RequestParser()
+        req.add_argument('article_id', type=int)
+        args = req.parse_args()
+        # 获取要删除的请求参数
+        article_id = args['article_id']
+        # 查找用户ID
+        user_id = g.user_id
+        # 查找用于对应的资讯中有没有要删除的那条资讯
+        news = News.query.filter_by(user_id=user_id, nid=article_id)
+        if news.first():
+            # 如果有, 则开始逻辑删除, 将status状态改为4(删除), 并更新删除时间
+            update_values = {}
+            update_values['status'] = News.STATUS.DELETED
+            update_values['delete_time'] = datetime.now()
+            news.update(update_values)
+            db.session.commit()
+        else:
+            return {'message': 'Invalid request param!'}, 401
+        return {'message': 'ok', 'data': {'art_id': news.first().nid}}
+
+
 api = Api(channel_bp)
 api.add_resourse(Add_News_Channel, '/addnewschannel', endpoint='add_channel')
 api.add_resourse(ChannelAll, '/allchannel', endpoint='all_channel')
@@ -693,3 +753,5 @@ api.add_resourse(GetCommentChild, '/get_comment_child', endpoint='get_comment_ch
 api.add_resourse(DeleteNewsComment, '/deletenewscomment', endpoint='deletenewscomment')
 api.add_resourse(PublishNews, '/publishnews', endpoint='publishnews')
 api.add_resourse(PutNews, '/putnews', endpoint='putnews')
+api.add_resourse(GetListNews, '/getlistnews', endpoint='getlistnews')
+api.add_resourse(DelUserNews, '/delusernews', endpoint='delusernews')
