@@ -43,7 +43,7 @@ comment_json = {
 }
 
 
-class Add_News_Channel(Resource):
+class AddNewsChannel(Resource):
     """
     添加频道
     """
@@ -732,26 +732,26 @@ class DelUserNews(Resource):
 
 
 api = Api(channel_bp)
-api.add_resourse(Add_News_Channel, '/addnewschannel', endpoint='add_channel')
-api.add_resourse(ChannelAll, '/allchannel', endpoint='all_channel')
-api.add_resourse(AddUser, '/adduser', endpoint='add_user')
-api.add_resourse(GetUserChannel, '/getuserchannel', endpoint='getuserchannel')
-api.add_resourse(AddChannel, '/addchannel', endpoint='addchannel')
-api.add_resourse(DelChannel, '/delchannel', endpoint='delchannel')
-api.add_resourse(AddUserNews, '/addusernews', endpoint='addusernews')
-api.add_resourse(AllUserNews, '/allusernews', endpoint='allusernews')
-api.add_resourse(GetUserAttention, '/getuserattention', endpoint='getuserattention')
-api.add_resourse(GetNewsByChannel, '/getnewsbychannel', endpoint='getnewsbychannel')
-api.add_resourse(GetNewsDetail, '/getnewsdetail', endpoint='getnewsdetail')
-api.add_resourse(AddCollection, '/addcollection', endpoint='addcollection')
-api.add_resourse(GetAllCollection, '/getallcollection', endpoint='getallcollection')
-api.add_resourse(DelCollection, '/delcollection', endpoint='getallcoldelcollectionlection')
-api.add_resourse(UpdateNewsLikeCount, '/updatenewslikecount', endpoint='updatenewslikecount')
-api.add_resourse(AddNewsComment, '/addnewscomment', endpoint='addnewscomment')
-api.add_resourse(GetNewsComment, '/get_news_comment', endpoint='get_news_comment')
-api.add_resourse(GetCommentChild, '/get_comment_child', endpoint='get_comment_child')
-api.add_resourse(DeleteNewsComment, '/deletenewscomment', endpoint='deletenewscomment')
-api.add_resourse(PublishNews, '/publishnews', endpoint='publishnews')
-api.add_resourse(PutNews, '/putnews', endpoint='putnews')
-api.add_resourse(GetListNews, '/getlistnews', endpoint='getlistnews')
-api.add_resourse(DelUserNews, '/delusernews', endpoint='delusernews')
+api.add_resource(AddNewsChannel, '/addnewschannel', endpoint='add_channel')
+api.add_resource(ChannelAll, '/allchannel', endpoint='all_channel')
+api.add_resource(AddUser, '/adduser', endpoint='add_user')
+api.add_resource(GetUserChannel, '/getuserchannel', endpoint='getuserchannel')
+api.add_resource(AddChannel, '/addchannel', endpoint='addchannel')
+api.add_resource(DelChannel, '/delchannel', endpoint='delchannel')
+api.add_resource(AddUserNews, '/addusernews', endpoint='addusernews')
+api.add_resource(AllUserNews, '/allusernews', endpoint='allusernews')
+api.add_resource(GetUserAttention, '/getuserattention', endpoint='getuserattention')
+api.add_resource(GetNewsByChannel, '/getnewsbychannel', endpoint='getnewsbychannel')
+api.add_resource(GetNewsDetail, '/getnewsdetail', endpoint='getnewsdetail')
+api.add_resource(AddCollection, '/addcollection', endpoint='addcollection')
+api.add_resource(GetAllCollection, '/getallcollection', endpoint='getallcollection')
+api.add_resource(DelCollection, '/delcollection', endpoint='getallcoldelcollectionlection')
+api.add_resource(UpdateNewsLikeCount, '/updatenewslikecount', endpoint='updatenewslikecount')
+api.add_resource(AddNewsComment, '/addnewscomment', endpoint='addnewscomment')
+api.add_resource(GetNewsComment, '/get_news_comment', endpoint='get_news_comment')
+api.add_resource(GetCommentChild, '/get_comment_child', endpoint='get_comment_child')
+api.add_resource(DeleteNewsComment, '/deletenewscomment', endpoint='deletenewscomment')
+api.add_resource(PublishNews, '/publishnews', endpoint='publishnews')
+api.add_resource(PutNews, '/putnews', endpoint='putnews')
+api.add_resource(GetListNews, '/getlistnews', endpoint='getlistnews')
+api.add_resource(DelUserNews, '/delusernews', endpoint='delusernews')

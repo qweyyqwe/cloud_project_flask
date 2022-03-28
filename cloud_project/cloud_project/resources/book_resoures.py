@@ -2,19 +2,17 @@
 # @File    : book_resoures.py
 # @Software: PyCharm
 
-import redis
 import traceback
 # 创建蓝图
-from datetime import datetime, timedelta
+from datetime import datetime
 
-from flask import Blueprint, g, request
+import redis
+from flask import Blueprint, g
 from flask_restful import Api, Resource, reqparse, marshal, fields
-from aliyunsdkcore.client import AcsClient
-from aliyunsdkcore.request import CommonRequest
 
-from common.models.model import User, Channel
-from common.models import db, rds
-from common.utils.pyjwt import generate_jwt, _generate_token, refresh_token
+from common.models import db
+from common.models.model import User
+from common.utils.pyjwt import _generate_token, refresh_token
 from common.utils.qlogin_decorator import login_required
 
 book_bp = Blueprint('book', __name__)
@@ -26,16 +24,15 @@ class BookResource(Resource):
         return 'ok'
 
 
-
-
-
 user_fields = {
     'uid': fields.Integer,
     'account': fields.String,
     'password': fields.String,
     'mobile': fields.String,
     'introduction': fields.String,
-    'email': fields.String
+    'email': fields.String,
+    # 'is_verified': fields.Boolean,
+    'certificate': fields.String,
 }
 
 
@@ -46,14 +43,18 @@ class AuthorizationResource(Resource):
 
     def post(self):
         parser = reqparse.RequestParser()
-        args_list = ['account', 'password', 'mobile', 'is_media']
+        args_list = ['account', 'password', 'mobile', 'email', 'introduction', 'certificate']
         for args in args_list:
             parser.add_argument(args, required=True)
         args = parser.parse_args()
         account = args.get('account')
         password = args.get('password')
         mobile = args.get('mobile')
-        is_media = args.get('is_media')
+        email = args.get('email')
+        # is_verified = args.get('is_verified')
+        introduction = args.get('introduction')
+        certificate = args.get('certificate')
+
         # # 验证码
         # code = args.get('code')
         # print('验证码是————', code)
@@ -63,11 +64,14 @@ class AuthorizationResource(Resource):
         number = User.query.filter_by(mobile=mobile).count()
         if number >= 1:
             return {'code': 405, 'result': '该手机已绑定用户，请更换手机号'}
-
         # 验证用户是否已经注册
         user = User.query.filter_by(account=account).first()
         if user:
             return {'code': 405, 'result': '该用户已存在'}
+        # 验证邮箱是否存在
+        emails = User.query.filter_by(email=email).first()
+        if emails:
+            return {'code': 405, 'result': '该邮箱已存在'}
 
         # # 添加手机验证码
         # rds_code = rds.get(mobile)
@@ -80,7 +84,7 @@ class AuthorizationResource(Resource):
         #     return {'code': 403, 'result': '验证码错误'}
 
         # 通过验证，注册用户
-        user = User(account=account, password=password, mobile=mobile)
+        user = User(account=account, password=password, mobile=mobile, email=email, introduction=introduction, certificate=certificate)
         user.last_login = datetime.now()
         db.session.add(user)
         db.session.commit()
@@ -118,7 +122,7 @@ class DayToken(Resource):
     15天之后的token}
     """
 
-    def put(self):
+    def post(self):
         return refresh_token()
 
 
@@ -176,7 +180,7 @@ class PutUserInfo(Resource):
     @login_required
     def put(self):
         parser = reqparse.RequestParser()
-        args_list = ['user_name', 'password', 'email', 'introduction', 'mobile']
+        args_list = ['user_name', 'password', 'email', 'introduction', 'mobile', 'certificate']
         for args in args_list:
             # 添加校验参数
             parser.add_argument(args)
@@ -211,10 +215,10 @@ class GetUsers(Resource):
 
 
 mredis = redis.Redis(host='192.168.86.207', port=6379, password=None)
-api.add_resourse(AuthorizationResource, '/register_user', endpoint='register_user')
-api.add_resourse(Login, '/login', endpoint='login')
-api.add_resourse(BookResource, '/index', endpoint='book')
-api.add_resourse(GetUserInfo, '/getuserinfo', endpoint='getuserinfo')
-api.add_resourse(PutUserInfo, '/putuserinfo', endpoint='putuserinfo')
-api.add_resourse(DayToken, '/daytoken', endpoint='daytoken')
-api.add_resourse(GetUsers, '/getusersall', endpoint='getuserall')
+api.add_resource(AuthorizationResource, '/register_user', endpoint='register_user')
+api.add_resource(Login, '/login', endpoint='login')
+api.add_resource(BookResource, '/index', endpoint='book')
+api.add_resource(GetUserInfo, '/getuserinfo', endpoint='getuserinfo')
+api.add_resource(PutUserInfo, '/putuserinfo', endpoint='putuserinfo')
+api.add_resource(DayToken, '/daytoken', endpoint='daytoken')
+api.add_resource(GetUsers, '/getusersall', endpoint='getuserall')
