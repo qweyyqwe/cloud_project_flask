@@ -15,7 +15,7 @@ from common.models import db
 from common.models.model import Channel, User, UserChannel, News, Collection, Comment
 from common.utils.qlogin_decorator import login_required
 
-channel_bp = Blueprint('books', __name__)
+channel_bp = Blueprint('channel', __name__)
 
 channel_json = {
     "cname": fields.String,

@@ -20,8 +20,6 @@ def jwt_authentication():
 
         # 验证token
         payload = verify_jwt(token)
-
-
         if payload is not None:
             # 保存到g对象中
             g.account = payload.get('account')

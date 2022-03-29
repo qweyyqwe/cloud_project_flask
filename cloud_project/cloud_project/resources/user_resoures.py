@@ -2,6 +2,7 @@
 # @File    : book_resoures.py
 # @Software: PyCharm
 
+import logging
 import traceback
 # 创建蓝图
 from datetime import datetime
@@ -12,10 +13,11 @@ from flask_restful import Api, Resource, reqparse, marshal, fields
 
 from common.models import db
 from common.models.model import User
+from common.models.user_model import UserBase
 from common.utils.pyjwt import _generate_token, refresh_token
 from common.utils.qlogin_decorator import login_required
 
-users_bp = Blueprint('book', __name__)
+users_bp = Blueprint('users', __name__)
 api = Api(users_bp)
 
 
@@ -108,13 +110,21 @@ class Login(Resource):
         user = User.query.filter_by(account=account, password=password).first()
         if not user:
             return {'code': 406, 'result': '用户名或密码错误'}
+        # 最后一次登录时间
         user.last_login = datetime.now()
-        db.session.commit()
-        # expiry = datetime.utcnow() + timedelta(60 * 10)
-        # token = generate_jwt({'account': account}, expiry)
 
-        token, refresh_token = _generate_token(account, user.uid)
+        # 第一种
+        user_id = user.uid
+        db.session.commit()
+        token, refresh_token = _generate_token(account, user_id)
         return {'code': 200, 'result': {'token': token, 'refresh_token': refresh_token}}
+
+        # # 第二种
+        # db.session.commit()
+        # # expiry = datetime.utcnow() + timedelta(60 * 10)
+        # # token = generate_jwt({'account': account}, expiry)
+        # token, refresh_token = _generate_token(account, user.uid)
+        # return {'code': 200, 'result': {'token': token, 'refresh_token': refresh_token}}
 
 
 class DayToken(Resource):
@@ -143,7 +153,7 @@ class GetUserInfo(Resource):
             user = User.query.filter_by(account=account).first()
         except Exception as e:
             error = traceback.format_exc()
-            print(">>>", error)
+            logging.error('AddCourseType is error:{}'.format(error))
             return {'code': 500, 'result': 'GetUserInfo error'}
         return marshal(user, user_fields)
         # if user:
@@ -214,6 +224,71 @@ class GetUsers(Resource):
         return marshal(user, user_fields, envelope='data')
 
 
+course_resource_fields = {
+    'id': fields.Integer,
+    'account': fields.String,
+    'phone': fields.String,
+    'password': fields.String,
+    'user_name': fields.String,
+    'address': fields.String,
+}
+
+
+class CourseResource(Resource):
+    """
+    注册账号
+    """
+
+    def post(self):
+        parser = reqparse.RequestParser()
+        args_list = ['account', 'password', 'phone', 'user_name', 'address']
+        for args in args_list:
+            parser.add_argument(args, required=True)
+        args = parser.parse_args()
+        account = args.get('account')
+        password = args.get('password')
+        phone = args.get('phone')
+        user_name = args.get('user_name')
+        address = args.get('address')
+        number = UserBase.query.filter_by(phone=phone).count()
+        if number >= 1:
+            return {'code': 405, 'result': '该手机已绑定用户，请更换手机号'}
+        # 验证用户是否已经注册
+        user = UserBase.query.filter_by(account=account).first()
+        if user:
+            return {'code': 405, 'result': '该用户已存在'}
+        user = UserBase(account=account, password=password, phone=phone, user_name=user_name, address=address)
+        user.last_login = datetime.now()
+        db.session.add(user)
+        db.session.commit()
+        return marshal(user, course_resource_fields)
+
+
+class CourseLogin(Resource):
+    """
+    登录
+    """
+
+    def post(self):
+        parser = reqparse.RequestParser()
+        parser.add_argument('account')
+        parser.add_argument('password')
+        args = parser.parse_args()
+        account = args.get('account')
+        password = args.get('password')
+
+        # 判断用户账号密码是否正确
+        user = UserBase.query.filter_by(account=account, password=password).first()
+        if not user:
+            return {'code': 406, 'result': '用户名或密码错误'}
+        # 最后一次登录时间
+        user.last_login = datetime.now()
+        user_id = user.uid
+        db.session.commit()
+        token, refresh_token = _generate_token(account, user_id)
+        return {'code': 200, 'result': {'token': token, 'refresh_token': refresh_token}}
+
+
 mredis = redis.Redis(host='192.168.86.207', port=6379, password=None)
 api.add_resource(AuthorizationResource, '/register_user', endpoint='register_user')
 api.add_resource(Login, '/login', endpoint='login')
@@ -222,3 +297,5 @@ api.add_resource(GetUserInfo, '/getuserinfo', endpoint='getuserinfo')
 api.add_resource(PutUserInfo, '/putuserinfo', endpoint='putuserinfo')
 api.add_resource(DayToken, '/daytoken', endpoint='daytoken')
 api.add_resource(GetUsers, '/getusersall', endpoint='getuserall')
+api.add_resource(CourseResource, '/course_resource', endpoint='course_resource')
+api.add_resource(CourseLogin, '/course_login', endpoint='course_login')
