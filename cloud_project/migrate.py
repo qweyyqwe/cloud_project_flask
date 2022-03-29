@@ -8,7 +8,7 @@ from flask_script import Manager
 from cloud_project.main import app
 from common.models import db
 from common.models.model import Book
-
+from common.models.book_model import Books
 
 
 pymysql.install_as_MySQLdb()
