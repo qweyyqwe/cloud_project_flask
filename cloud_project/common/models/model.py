@@ -208,3 +208,4 @@ class SearchHistory(db.Model):
     sid = db.Column(db.Integer, primary_key=True, doc='搜索记录ID')
     content = db.Column(db.String(128), doc="用户搜索内容")
     user_id = db.Column(db.Integer, db.ForeignKey('user_basic.uid'), doc="用户ID")
+

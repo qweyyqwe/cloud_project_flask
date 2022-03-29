@@ -8,9 +8,11 @@ from flask_cors import CORS
 from flask_restful import Api
 
 from common.models import db
-from cloud_project.resources.book_resoures import book_bp
+from cloud_project.resources.user_resoures import users_bp
+from cloud_project.resources.book_resoures import books_bp
 from cloud_project.resources.channel_resoures import channel_bp
 from common.utils.middlewares import jwt_authentication
+
 
 def create_book_app(config):
     # 实例化app
@@ -22,7 +24,8 @@ def create_book_app(config):
     # db绑定对象app
     db.init_app(app)
     # 注册蓝图
-    app.register_blueprint(book_bp)
+    app.register_blueprint(users_bp)
+    app.register_blueprint(books_bp)
     app.register_blueprint(channel_bp)
     CORS(app, resources={r"/api/*": {"origins": "*"}})
     Api(app)
