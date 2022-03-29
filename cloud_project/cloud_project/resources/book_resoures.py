@@ -10,7 +10,7 @@ from flask_restful import Api, Resource, reqparse, marshal, fields
 from common.models import db
 from common.models.book_model import Books
 
-books_bp = Blueprint('books_bp', __name__)
+books_bp = Blueprint('books', __name__)
 api = Api(books_bp)
 
 book_fields = {

@@ -4,12 +4,15 @@ import pymysql
 from flask_migrate import Migrate, MigrateCommand
 from flask_script import Manager
 
-
 from cloud_project.main import app
-from common.models import db
-from common.models.model import Book
-from common.models.book_model import Books
 
+from common.models import db
+from common.models.model import *
+from common.models.book_model import *
+from common.models.course_model import *
+from common.models.user_model import *
+
+from common.models import db
 
 pymysql.install_as_MySQLdb()
 
@@ -19,4 +22,3 @@ manage.add_command('db', MigrateCommand)
 
 if __name__ == '__main__':
     manage.run()
-

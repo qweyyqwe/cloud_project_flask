@@ -28,5 +28,18 @@ def create_book_app(config):
     app.register_blueprint(books_bp)
     app.register_blueprint(channel_bp)
     CORS(app, resources={r"/api/*": {"origins": "*"}})
-    Api(app)
+
+    """
+    app.scheduler = BackgroundScheduler(executors=executors)
+    # 每隔一分钟执行一次
+    app.scheduler.add_job(update_recommend_list, trigger='interval', hours=1, args=[cache, app])
+    app.scheduler.add_job(update_recommend_list, trigger='date', args=[cache, app])
+    # app.scheduler.add_job(update_recommend_list, trigger='interval', hours=1, args=[cache, app])
+    # app.scheduler.add_job(update_recommend_list, trigger='date', args=[cache, app])
+    # app.scheduler.add_job(func=cron_test, trigger='interval', seconds=10)
+    # app.scheduler.add_job(func=GetUserAttentionNew, trigger='date')
+    app.scheduler.start()
+    """
+
+    api = Api(app)
     return app
