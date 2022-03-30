@@ -5,8 +5,6 @@ from flask_migrate import Migrate, MigrateCommand
 from flask_script import Manager
 
 from cloud_project.main import app
-
-from common.models import db
 from common.models.model import *
 from common.models.book_model import *
 from common.models.course_model import *

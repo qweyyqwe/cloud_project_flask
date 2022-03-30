@@ -72,3 +72,6 @@ class CourseTitle(db.Model):
     course_id = db.Column(db.Integer, db.ForeignKey("tb_course.id"), primary_key=True, doc='课程id')
     tag_id = db.Column(db.Integer, db.ForeignKey("tb_course_tag.id"), primary_key=True, doc='标签id')
     is_delete = db.Column(db.Boolean, doc='状态(0存在对应关系;1不存在对应关系)')
+
+
+
