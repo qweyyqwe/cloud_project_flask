@@ -3,16 +3,15 @@
 # @File    : course_resoures.py
 # @Software: PyCharm
 
-import traceback
 import logging
-
+import traceback
 
 from flask import Blueprint, g
 from flask_restful import Api, Resource, reqparse, marshal, fields
 
-from common.models import db
-from common.models.user_model import UserBase
+from common.models import db, cache
 from common.models.course_model import CourseType, CourseTag, Course
+from common.models.user_model import UserBase
 from common.utils.custom_output_json import custom_output_json
 from common.utils.qlogin_decorator import login_required
 
@@ -65,7 +64,7 @@ class AddCourseType(Resource):
 
 class PutCourseType(Resource):
     """
-    修改课程类型
+    修改课程类型  # TODO
     要登录，通过类型ID进行修改
     """
 
@@ -80,20 +79,25 @@ class PutCourseType(Resource):
         id = args.get('id')
         title = args.get('title')
         sequence = args.get('sequence')
-        data = {}
-        if title:
-            data.update({'title': title})
-        course_type = CourseType.query.filter_by(id=id)
+        print(">>>>>>>>>", title)
+        try:
+            data = {}
+            if title:
+                data.update({'title': title})
+            course_type = CourseType.query.filter_by(id=id)
 
-        # 判断是否有这个课程类别
-        if not course_type.first():
-            return {'message': 'Not find news', 'code': 407}
-        # 判断用户是否是自己  否则没权限
-        if course_type.first().user_id != user_id:
-            return {'message': 'Not Permission', 'code': 407}
-        course_type.update(data)
-        db.session.commit()
-        return {'message': 'ok', 'code': 200, 'data': marshal(course_type, course_type_fields)}
+            # 判断是否有这个课程类别
+            if not course_type.first():
+                return {'message': 'Not find news', 'code': 407}
+            # 判断用户是否是自己  否则没权限
+            if course_type.first().user.id != user_id:
+                return {'message': 'Not Permission', 'code': 407}
+            course_type.update(data)
+            db.session.commit()
+            return {'message': 'ok', 'code': 200, 'data': marshal(course_type, course_type_fields)}
+        except:
+            error = traceback.format_exc()
+            logging.error('update_recommend_list error:{}'.format(error))
 
 
 class DelCourseType(Resource):
@@ -108,6 +112,7 @@ class DelCourseType(Resource):
         args = parser.parse_args()
         id = args.get('id')
         book = CourseType.query.get(id)
+        # TODO 一直可以删除
         if not book:
             return {'message': 'course_type is not exist!', 'code': 405}
         book.is_delete = 1
@@ -204,19 +209,17 @@ class CourseMethods(Resource):
         """
         parser = reqparse.RequestParser()
         parser.add_argument('title')
-        parser.add_argument('sequence')
         parser.add_argument('desc')
         parser.add_argument('status')
         parser.add_argument('follower')
         parser.add_argument('learner')
         args = parser.parse_args()
         title = args.get('title')
-        sequence = args.get('sequence')
         desc = args.get('desc')
         status = args.get('status')
         follower = args.get('follower')
         learner = args.get('learner')
-        course = CourseTag(title=title, sequence=sequence, desc=desc, status=status, follower=follower, learner=learner)
+        course = Course(title=title, desc=desc, status=status, follower=follower, learner=learner)
         db.session.add(course)
         db.session.commit()
         return marshal(course, course_fields)
@@ -256,3 +259,10 @@ class CourseMethods(Resource):
         course.is_delete = 1
         db.session.commit()
         return marshal(course, course_fields)
+
+
+api.add_resource(AddCourseType, '/add_course_type', endpoint='add_course_type')
+api.add_resource(PutCourseType, '/put_course_type', endpoint='put_course_type')
+api.add_resource(DelCourseType, '/del_course_type', endpoint='del_course_type')
+api.add_resource(CourseTagMethods, '/course_tag_methods', endpoint='course_tag_methods')
+api.add_resource(CourseMethods, '/course_methods', endpoint='course_methods')

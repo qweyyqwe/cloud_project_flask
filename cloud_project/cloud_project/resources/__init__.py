@@ -11,6 +11,7 @@ from common.models import db
 from cloud_project.resources.user_resoures import users_bp
 from cloud_project.resources.book_resoures import books_bp
 from cloud_project.resources.channel_resoures import channel_bp
+from cloud_project.resources.course_resoures import course_bp
 from common.utils.middlewares import jwt_authentication
 
 
@@ -27,6 +28,7 @@ def create_book_app(config):
     app.register_blueprint(users_bp)
     app.register_blueprint(books_bp)
     app.register_blueprint(channel_bp)
+    app.register_blueprint(course_bp)
     CORS(app, resources={r"/api/*": {"origins": "*"}})
 
     """

@@ -8,6 +8,7 @@
 # 创建一个对象
 from flask_sqlalchemy import SQLAlchemy
 from common.settings.settings import Redis
+from flask_caching import Cache
 db = SQLAlchemy()
 rds = Redis().connect()
-
+cache = Cache
