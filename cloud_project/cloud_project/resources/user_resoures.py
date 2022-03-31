@@ -23,6 +23,7 @@ from common.models.user_model import UserBase
 from common.utils.pyjwt import _generate_token, refresh_token
 from common.utils.qlogin_decorator import login_required
 from common.utils.verify import generate_code, phone_code
+from celery_task.main import add
 
 users_bp = Blueprint('users', __name__)
 api = Api(users_bp)
@@ -314,64 +315,84 @@ class CourseLogin(Resource):
     """
 
     def post(self):
-        parser = reqparse.RequestParser()
-        parser.add_argument('account')
-        parser.add_argument('password')
-        parser.add_argument('phone')
-        # 图片验证码
-        parser.add_argument('code')
-        # 图片的uuid
-        parser.add_argument('uuid')
-
-        # 短信验证码
-        parser.add_argument('msg_code')
-        args = parser.parse_args()
-        account = args.get('account')
-        password = args.get('password')
-        phone = args.get('phone')
-        code = args.get('code')
-        uuid = args.get('uuid')
-        msg_code = args.get('msg_code')
-
-        # 图形验证码
-        real_code = rds.get(uuid)
-        if real_code != code:
-            return {'message': '错误', 'code': 407}
-
-        # 注册短信验证码
-        if not msg_code:
-            return {'message': '过期', 'code': 407}
-        # 从redis中取出短信验证码
-        msg_code = rds.get(phone)
-        # 判断是否存在  不存在
-        if not msg_code:
-            return {'code': 407, 'message': '短信验证码过期'}
-        msg_code = msg_code.decode()
-        # 验证码是否一致
-        if msg_code != msg_code:
-            return {'message': '错误', 'code': 407}
-        # 验证手机号是否已使用
-        number = UserBase.query.filter_by(phone=phone).count()
-        if number >= 1:
+        try:
+            parser = reqparse.RequestParser()
+            args_list = ['account', 'password', 'phone', 'code', 'uuid']
+            for args in args_list:
+                parser.add_argument(args, required=True)
+            # parser = reqparse.RequestParser()
+            # parser.add_argument('account')
+            # parser.add_argument('password')
+            # # parser.add_argument('phone')
+            # # 图片验证码
+            # parser.add_argument('code')
+            # # 图片的uuid
+            # parser.add_argument('uuid')
+            #
+            # # 短信验证码
+            # # parser.add_argument('msg_code')
+            args = parser.parse_args()
+            account = args.get('account')
+            password = args.get('password')
+            print('>>>>>', account, password)
+            # phone = args.get('phone')
             code = args.get('code')
             uuid = args.get('uuid')
 
+            # 不能為空
+            if not all([account, password, code]):
+                return {'message': 'params is error', 'code': 400}
+
+            # TODO 通过前端的uuid来刷新的
+            # 图形验证码
+            # 獲取前端的uuid
             real_code = rds.get(uuid)
             if not real_code:
                 return {'code': 407, 'message': '验证码过期'}
             real_code = real_code.decode()
+            real_code = real_code.lower()
+            code = code.lower()
             if real_code != code:
-                return {'code': 406, 'message': '验证码错误'}
-        # 判断用户账号密码是否正确
-        user = UserBase.query.filter_by(account=account, password=password).first()
-        if not user:
-            return {'code': 406, 'result': '用户名或密码错误'}
-        # 最后一次登录时间
-        user.last_login = datetime.now()
-        user_id = user.id
-        db.session.commit()
-        token, refresh_token = _generate_token(account, user_id)
-        return {'code': 200, 'result': {'token': token, 'refresh_token': refresh_token}}
+                return {'code': 407, "message": '错误'}
+
+            # # 注册短信验证码
+            # if not msg_code:
+            #     return {'message': '过期', 'code': 407}
+            # # 从redis中取出短信验证码
+            # msg_code = rds.get(phone)
+            # # 判断是否存在  不存在
+            # if not msg_code:
+            #     return {'code': 407, 'message': '短信验证码过期'}
+            # msg_code = msg_code.decode()
+            # # 验证码是否一致
+            # if msg_code != msg_code:
+            #     return {'message': '错误', 'code': 407}
+            # # 验证手机号是否已使用
+            # number = UserBase.query.filter_by(phone=phone).count()
+            # if number >= 1:
+            #     code = args.get('code')
+            #     uuid = args.get('uuid')
+            #
+            #     real_code = rds.get(uuid)
+            #     if not real_code:
+            #         return {'code': 407, 'message': '验证码过期'}
+            #     real_code = real_code.decode()
+            #     if real_code != code:
+            #         return {'code': 406, 'message': '验证码错误'}
+            # 判断用户账号密码是否正确
+            user = UserBase.query.filter_by(account=account, password=password).first()
+            if not user:
+                return {'code': 406, 'result': '用户名或密码错误'}
+            # 最后一次登录时间
+            user.last_login = datetime.now()
+            user_id = user.id
+            db.session.commit()
+            token, refresh_token = _generate_token(account, user_id)
+            return {'code': 200, 'result': {'token': token, 'refresh_token': refresh_token}}
+        except:
+            error = traceback.format_exc()
+            logging.error('register_user error:{}'.format(error))
+            return {'error': error, 'code': 500}
 
 
 class VerificationCode(Resource):
@@ -381,6 +402,7 @@ class VerificationCode(Resource):
             parser.add_argument('uuid')
             args = parser.parse_args()
             uuid = args.get('uuid')
+            print('uuid>>>>>>', uuid)
 
             text, image = generate_code()
             rds.setex(uuid, 60 * 5, text)
@@ -405,7 +427,9 @@ class MessageCode(Resource):
         code = str(random.randint(100000, 999999))
         mobile = '13782032526'
         # 发送验证码
-        res = phone_code(mobile, code)
+        # res = phone_code(mobile, code)
+        res = add.delay(10, 10)
+        print('>>>>', res)
         # 把短信验证码放入redis
         rds.setex(mobile, 60, code)
         return {'message': '发送验证码成功', 'code': 200}
@@ -422,6 +446,6 @@ api.add_resource(GetUsers, '/getusersall', endpoint='getuserall')
 
 
 api.add_resource(CourseResource, '/course_resource', endpoint='course_resource')
-api.add_resource(CourseLogin, '/course_login', endpoint='course_login')
-api.add_resource(VerificationCode, '/verification_code', endpoint='verification_code')
-api.add_resource(MessageCode, '/sendalysms', endpoint='sendalysms')
+api.add_resource(CourseLogin, '/api/course_login', endpoint='course_login')
+api.add_resource(VerificationCode, '/api/verification_code', endpoint='verification_code')
+api.add_resource(MessageCode, '/api/sendalysms', endpoint='sendalysms')

@@ -29,7 +29,8 @@ def create_book_app(config):
     app.register_blueprint(books_bp)
     app.register_blueprint(channel_bp)
     app.register_blueprint(course_bp)
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    CORS(app, resources={r"/*/*": {"origins": "*"}})
+    # CORS(app, supports_credentials=True)
 
     """
     app.scheduler = BackgroundScheduler(executors=executors)
