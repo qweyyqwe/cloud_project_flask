@@ -74,12 +74,12 @@ def verify_jwt(token, secret=None):
         payload = jwt.decode(token, secret, algorithms='HS256')
     except:
         error = traceback.format_exc()
-        print('error', error)
+        # print('error', error)
         payload = None
     return payload
 
 
-def _generate_token(account, user_id, refresh=True):
+def _generate_token(user_id, refresh=True):
     """
     生成token
     :param user_id:
@@ -90,12 +90,12 @@ def _generate_token(account, user_id, refresh=True):
     # 定义过期时间        2小时
     expiry = datetime.utcnow() + timedelta(hours=2)
     # 生成Token
-    token = 'Bearer ' + generate_jwt({'account': account, 'user_id': user_id}, expiry, secret)
+    token = 'Bearer ' + generate_jwt({'user_id': user_id}, expiry, secret)
 
     if refresh:
         expiry = datetime.utcnow() + timedelta(days=15)
         # is_refresh作为更新token的信号/
-        refresh_token = 'Bearer ' + generate_jwt({'account': account, 'user_id': user_id, 'is_refresh': True}, expiry,
+        refresh_token = 'Bearer ' + generate_jwt({'user_id': user_id, 'is_refresh': True}, expiry,
                                                  secret)
     else:
         refresh_token = None
