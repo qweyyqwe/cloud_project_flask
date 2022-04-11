@@ -5,6 +5,15 @@
 
 
 from common.models import db
+from datetime import datetime
+from common.models.user_model import UserBase
+
+
+class Base(db.Model):
+    __abstract__ = True
+    create_time = db.Column(db.DateTime, default=datetime.now, doc='创建时间')
+    update_time = db.Column(db.DateTime, default=datetime.now, doc='更新时间')
+    user_id = db.Column(db.Integer, doc='课程相关添加人')
 
 
 class CourseType(db.Model):
@@ -22,7 +31,7 @@ class CourseType(db.Model):
         return self.title
 
 
-class CourseTag(db.Model):
+class CourseTag(Base):
     """
     课程标签
     """
@@ -37,7 +46,7 @@ class CourseTag(db.Model):
         return self.title
 
 
-class Course(db.Model):
+class Course(Base):
     """
     课程表
     """
@@ -58,12 +67,13 @@ class Course(db.Model):
     status = db.Column(db.String(8), doc='课程logo地址', default='已上线')
     follower = db.Column(db.Integer, default=0, doc='关注人数')
     learner = db.Column(db.Integer, default=0, doc='学习人数')
+    chapters = db.relationship('Chapters', backref='tb_course')
 
     def __str__(self):
         return self.title
 
 
-class CourseTitle(db.Model):
+class CourseTitle(Base):
     """
     课程表与课程标签   的中间件
     """
@@ -74,4 +84,36 @@ class CourseTitle(db.Model):
     is_delete = db.Column(db.Boolean, doc='状态(0存在对应关系;1不存在对应关系)')
 
 
+class Chapters(Base):
+    """
+    章节目录
+    """
+    __tablename__ = 'tb_chapters'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(24), doc='章标题')
+    serial_num = db.Column(db.Integer, doc='章序号')
+    course = db.Column(db.Integer, db.ForeignKey("tb_course.id", ondelete="CASCADE"), doc='课程')
+    sections = db.relationship('Sections', backref='tb_chapters')
 
+    def __str__(self):
+        return self.title
+
+
+class Sections(Base):
+    """
+    标题目录
+    """
+    __tablename__ = 'tb_sections'
+
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(24), doc='章标题')
+    serial_num = db.Column(db.Integer, doc='章序号')
+    chapters = db.Column(db.Integer, db.ForeignKey("tb_chapters.id", ondelete="CASCADE"), doc='课程')
+    learn_time = db.Column(db.Integer, doc='学习小时', default=1)
+    content = db.Column(db.Text, doc='学习内容')
+    video = db.Column(db.String(256), doc='学习视频')
+    seq_num = db.Column(db.Integer, doc='序号', default=1)
+    like_count = db.Column(db.Integer, doc='点赞次数', default=0)
+
+    def __str__(self):
+        return self.title

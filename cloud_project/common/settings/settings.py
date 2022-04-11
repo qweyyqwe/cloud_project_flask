@@ -14,6 +14,16 @@ class Fik(object):
     # SQLALCHEMY_ECHO = True
     JWT_SECRET = 'LSJFLSJFLWE23O9UDFNSDF'
 
+    """
+    缓存配置
+    """
+    CACHE_TYPE = 'redis'  # 使用redis作为缓存
+    CACHE_KEY_PREFIX = 'students_lin'  # 设置cache_key的前缀
+    CACHE_REDIS_HOST = '127.0.0.1'  # redis地址
+    CACHE_REDIS_PORT = '6379'  # redis端口
+    # CACHE_REDIS_PASSWORD = ''  # redis密码
+    CACHE_REDIS_DB = 6  # 使用哪个数据库
+
 
 
 class Redis:

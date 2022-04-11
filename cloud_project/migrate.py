@@ -9,6 +9,8 @@ from common.models.model import *
 from common.models.book_model import *
 from common.models.course_model import *
 from common.models.user_model import *
+from common.models.comment_model import *
+from common.models.pay_model import *
 
 from common.models import db
 

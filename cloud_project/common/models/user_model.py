@@ -18,8 +18,8 @@ class UserBase(db.Model):
     account = db.Column(db.String(32), doc='账号')
     phone = db.Column(db.String(16), doc='手机号')
     password = db.Column(db.String(32), doc='密码')
-    user_name = db.Column(db.String(32), doc='昵称')
-    profile_photo = db.Column(db.String(64), doc='头像')
+    nick_name = db.Column(db.String(32), doc='昵称')
+    img = db.Column(db.String(64), doc='头像')
     last_login = db.Column(db.DateTime, doc='最后登录时间')
     address = db.Column(db.String(128), doc='地址')
     vip = db.Column(db.Integer, db.ForeignKey("vip.id", ondelete="CASCADE"))
@@ -51,3 +51,12 @@ class OauthUser(db.Model):
     uid = db.Column(db.String(512), doc='第三方登录的id')
     user = db.Column(db.Integer, db.ForeignKey("user.id", ondelete="CASCADE"))
     oauth_type = db.Column(db.String(128), doc='第三方登录类型')
+    @classmethod
+    def is_bind_user(cls, uid, oauth_type):
+        """
+        是否绑定用户
+        """
+        oauth = OauthUser.query.filter_by(uid=uid, oauth_type=oauth_type).first()
+        if oauth:
+            return True
+        return False
